@@ -1,3 +1,3 @@
-# BettrFood
+# Urls
 
-A web app using Go and mongodb
+An url shortener using Go and redis
