@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"github.com/soveran/redisurl"
@@ -12,6 +13,18 @@ import (
 	"os"
 	"strings"
 )
+
+type Response map[string]interface{}
+
+func (r Response) String() (s string) {
+	b, err := json.Marshal(r)
+	if err != nil {
+		s = ""
+		return
+	}
+	s = string(b)
+	return
+}
 
 func main() {
 	/* REDISTOGO_URL=redis://redistogo:843a6dc681ee128046391c888529f6f1@koi.redistogo.com:9934/ */
@@ -49,6 +62,9 @@ func shorten(res http.ResponseWriter, req *http.Request) {
 	url := req.FormValue("url")
 	hash, _ := generateUniqueHash(url)
 	conn.Do("SET", hash, url)
+	res.Header().Set("Content-Type", "application/json")
+	fullURL := hash
+	fmt.Fprint(res, Response{"success": true, "url": req.Host + "/" + fullURL})
 	http.Redirect(res, req, "/", http.StatusFound)
 }
 

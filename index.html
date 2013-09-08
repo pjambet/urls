@@ -19,11 +19,32 @@
             <form action="/shorten/" method="POST">
                 <input type="text" placeholder="Type a URL to shorten ..." name="url">
                 <input type="submit" value="Shorten !">
+                <div id="result">
+                  <a href=""></a>
+                </div>
                 <footer>
                     Made with Go and Redis
                 </footer>
             </form>
         </div>
     </section>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script type="text/javascript">
+      $(function() {
+        $('form').submit(function(e) {
+          e.preventDefault();
+          $.ajax({
+            type: "POST",
+            url: $('form').attr("action"),
+            data: {"url": $('form input[type=text]').val()},
+            success: function(response) {
+              $("#result a").text(response.url);
+              $("#result a").attr("href", "http://" + response.url);
+            },
+            dataType: 'json'
+          });
+        })
+      })
+    </script>
 </body>
 </html>
