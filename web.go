@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	/* REDISTOGO_URL: redis: //redistogo:843a6dc681ee128046391c888529f6f1@koi.redistogo.com:9934/ */
+	/* REDISTOGO_URL=redis://redistogo:843a6dc681ee128046391c888529f6f1@koi.redistogo.com:9934/ */
 	http.HandleFunc("/", hello)
 	http.HandleFunc("/shorten/", shorten)
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
@@ -62,7 +62,15 @@ func generateUniqueHash(url string) (string, error) {
 }
 
 func getRedisConn() (redis.Conn, error) {
-	conn, err := redis.Dial("tcp", ":6379")
+	connectionString := os.Getenv("REDISTOGO_URL")
+	fmt.Println(connectionString)
+	var conn redis.Conn
+	var err error
+	if connectionString != "" {
+		conn, err = redis.Dial("tcp", connectionString)
+	} else {
+		conn, err = redis.Dial("tcp", ":6379")
+	}
 	if err != nil {
 		fmt.Println("Failed to connect to redis")
 	}
