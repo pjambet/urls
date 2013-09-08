@@ -27,7 +27,6 @@ func (r Response) String() (s string) {
 }
 
 func main() {
-	/* REDISTOGO_URL=redis://redistogo:843a6dc681ee128046391c888529f6f1@koi.redistogo.com:9934/ */
 	http.HandleFunc("/", hello)
 	http.HandleFunc("/shorten/", shorten)
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
