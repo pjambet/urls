@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/garyburd/redigo/redis"
+	"github.com/soveran/redisurl"
 	"html/template"
 	"io"
 	"net/http"
@@ -63,11 +64,10 @@ func generateUniqueHash(url string) (string, error) {
 
 func getRedisConn() (redis.Conn, error) {
 	connectionString := os.Getenv("REDISTOGO_URL")
-	fmt.Println(connectionString)
 	var conn redis.Conn
 	var err error
 	if connectionString != "" {
-		conn, err = redis.Dial("tcp", connectionString)
+		conn, err = redisurl.ConnectToURL(connectionString)
 	} else {
 		conn, err = redis.Dial("tcp", ":6379")
 	}
