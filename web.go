@@ -13,13 +13,7 @@ import (
 )
 
 func main() {
-	conn, e := redis.Dial("tcp", ":6379")
-	if e != nil {
-		fmt.Println("Failed to connect to redis")
-	}
-	fmt.Println("Connected to redis")
-	conn.Do("SET", "foo", "bar")
-	conn.Do("SET", "baz", "qux")
+	/* REDISTOGO_URL: redis: //redistogo:843a6dc681ee128046391c888529f6f1@koi.redistogo.com:9934/ */
 	http.HandleFunc("/", hello)
 	http.HandleFunc("/shorten/", shorten)
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
@@ -32,14 +26,10 @@ func main() {
 }
 
 func hello(res http.ResponseWriter, req *http.Request) {
-	// TODO : Redirect to the URL form the request after trying to find it
 	urlParam := strings.TrimPrefix(req.URL.Path, "/")
 	if urlParam != "" {
 		fmt.Println(urlParam)
-		conn, e := redis.Dial("tcp", ":6379")
-		if e != nil {
-			fmt.Println("Failed to connect to redis")
-		}
+		conn, _ := getRedisConn()
 		result, err := redis.String(conn.Do("GET", urlParam))
 		if err != nil {
 			fmt.Println("Doesn't not exist")
@@ -54,10 +44,7 @@ func hello(res http.ResponseWriter, req *http.Request) {
 }
 
 func shorten(res http.ResponseWriter, req *http.Request) {
-	conn, e := redis.Dial("tcp", ":6379")
-	if e != nil {
-		fmt.Println("Failed to connect to redis")
-	}
+	conn, _ := getRedisConn()
 	url := req.FormValue("url")
 	hash, _ := generateUniqueHash(url)
 	conn.Do("SET", hash, url)
@@ -72,4 +59,13 @@ func generateUniqueHash(url string) (string, error) {
 	hash := hex.EncodeToString(byteArray)[0:6]
 	fmt.Println(hash)
 	return hash, nil
+}
+
+func getRedisConn() (redis.Conn, error) {
+	conn, err := redis.Dial("tcp", ":6379")
+	if err != nil {
+		fmt.Println("Failed to connect to redis")
+	}
+	fmt.Println("Connected to redis")
+	return conn, err
 }
