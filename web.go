@@ -41,13 +41,14 @@ func main() {
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	fmt.Println("listening...")
 
-	conn, _ := getRedisConn()
+	// conn, _ := getRedisConn()
 	// channel =
 
 	go func() {
 		for {
 			select {
 			case res := <-channel:
+				conn, _ := getRedisConn()
 				res.resp <- conn
 			}
 		}
