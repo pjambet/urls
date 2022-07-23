@@ -1,1 +1,1 @@
-web: ./urls
+web: urls
