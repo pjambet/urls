@@ -5,16 +5,23 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/garyburd/redigo/redis"
-	"github.com/soveran/redisurl"
+
+	// "github./garyburd/redigo/redis"
 	"html/template"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/gomodule/redigo/redis"
+	"github.com/soveran/redisurl"
 )
 
 type Response map[string]interface{}
+
+type op struct {
+	resp chan redis.Conn
+}
 
 func (r Response) String() (s string) {
 	b, err := json.Marshal(r)
@@ -26,11 +33,25 @@ func (r Response) String() (s string) {
 	return
 }
 
+var channel = make(chan op)
+
 func main() {
 	http.HandleFunc("/", hello)
 	http.HandleFunc("/shorten/", shorten)
 	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	fmt.Println("listening...")
+
+	conn, _ := getRedisConn()
+	// channel =
+
+	go func() {
+		for {
+			select {
+			case res := <-channel:
+				res.resp <- conn
+			}
+		}
+	}()
 
 	err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 	if err != nil {
@@ -39,9 +60,13 @@ func main() {
 }
 
 func hello(res http.ResponseWriter, req *http.Request) {
+	op := op{
+		resp: make(chan redis.Conn)}
+	channel <- op
+	conn := <-op.resp
 	urlParam := strings.TrimPrefix(req.URL.Path, "/")
 	if urlParam != "" {
-		conn, _ := getRedisConn()
+		// conn, _ := getRedisConn()
 		result, err := redis.String(conn.Do("GET", urlParam))
 		if err != nil {
 			fmt.Println("Doesn't not exist")
@@ -54,7 +79,10 @@ func hello(res http.ResponseWriter, req *http.Request) {
 }
 
 func shorten(res http.ResponseWriter, req *http.Request) {
-	conn, _ := getRedisConn()
+	op := op{
+		resp: make(chan redis.Conn)}
+	channel <- op
+	conn := <-op.resp
 	url := req.FormValue("url")
 	hash, _ := generateUniqueHash(url)
 	conn.Do("SET", hash, url)
@@ -77,8 +105,10 @@ func getRedisConn() (redis.Conn, error) {
 	var conn redis.Conn
 	var err error
 	if connectionString != "" {
+		fmt.Println("Establishing new connection")
 		conn, err = redisurl.ConnectToURL(connectionString)
 	} else {
+		fmt.Println("Establishing new local connection")
 		conn, err = redis.Dial("tcp", ":6379")
 	}
 	if err != nil {
